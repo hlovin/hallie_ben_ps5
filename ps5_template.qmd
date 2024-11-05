@@ -1,0 +1,220 @@
+---
+title: "Problem Set 5"
+author: "Hallie Lovin and Ben Schiffman"
+date: "11/9/2024"
+format: 
+  pdf:
+    include-in-header: 
+       text: |
+         \usepackage{fvextra}
+         \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\}}
+include-before-body:
+  text: |
+    \RecustomVerbatimEnvironment{verbatim}{Verbatim}{
+      showspaces = false,
+      showtabs = false,
+      breaksymbolleft={},
+      breaklines
+    }
+output:
+  echo: false
+  eval: false
+---
+
+**Due 11/9 at 5:00PM Central. Worth 100 points + 10 points extra credit.**
+
+## Submission Steps (10 pts)
+1. This problem set is a paired problem set.
+2. Play paper, scissors, rock to determine who goes first. Call that person *Partner 1*.
+    - Partner 1 (name and cnet ID): Hallie Lovin, hlovin
+    - Partner 2 (name and cnet ID): Ben Schiffman, bschiffman
+3. Partner 1 will accept the `ps5` and then share the link it creates with their partner. You can only share it with one partner so you will not be able to change it after your partner has accepted. 
+4. "This submission is our work alone and complies with the 30538 integrity policy." Add your initials to indicate your agreement: \*\*\H\L\*\* \*\*\H\\*\*
+5. "I have uploaded the names of anyone else other than my partner and I worked with on the problem set **[here](https://docs.google.com/forms/d/185usrCREQaUbvAXpWhChkjghdGgmAZXA3lPWpXLLsts/edit)**"  (1 point)
+6. Late coins used this pset: \*\*\_\_\*\* Late coins left after submission: \*\*\_\_\*\*
+7. Knit your `ps5.qmd` to an PDF file to make `ps5.pdf`, 
+    * The PDF should not be more than 25 pages. Use `head()` and re-size figures when appropriate. 
+8. (Partner 1): push  `ps5.qmd` and `ps5.pdf` to your github repo.
+9. (Partner 1): submit `ps5.pdf` via Gradescope. Add your partner on Gradescope.
+10. (Partner 1): tag your submission in Gradescope
+
+\newpage
+
+```{python}
+import pandas as pd
+import altair as alt
+import time
+
+import warnings 
+warnings.filterwarnings('ignore')
+alt.renderers.enable("png")
+```
+
+
+## Step 1: Develop initial scraper and crawler
+
+### 1. Scraping (PARTNER 1)
+
+```{python}
+#import necessary packages
+import requests
+from bs4 import BeautifulSoup
+```
+
+```{python}
+#fetch the website from online
+url = "https://oig.hhs.gov/fraud/enforcement/"
+response = requests.get(url)
+```
+
+```{python}
+#convert the URL into a soup object
+soup = BeautifulSoup(response.text, "lxml")
+soup.text[0:50]
+```
+
+```{python}
+#Scrape the title of the enforcement act 
+title = soup.find_all("h2")
+len(title)
+```
+
+```{python}
+#edit the scrape so that it is only grabbing the title not the hyperlink or the other stuff that is produced with the above code
+title = [item.find("a").get_text(strip=True) for item in soup.find_all("h2") if item.find("a", href=True)]
+```
+
+```{python}
+#scrape the date of the enforcements 
+date = [date.get_text(strip=True) for date in soup.find_all("span", class_="text-base-dark padding-right-105")]
+```
+
+```{python}
+#scrape the category 
+category = [category.get_text(strip=True) for category in soup.find_all("li", class_="display-inline-block usa-tag text-no-lowercase text-base-darkest bg-base-lightest margin-right-1")]
+
+len(category)
+```
+
+```{python}
+#import new package to join urls -- had to get chat gpt to help me with this 
+from urllib.parse import urljoin
+```
+
+```{python}
+#scrape the link 
+link = [item.find("a")["href"] for item in soup.find_all("h2") if item.find("a", href=True)]
+
+#grab the base url
+base_url = "https://oig.hhs.gov"
+
+#join the base url to the partial url so we can use this url to crawl later
+link = [urljoin(base_url, link) for link in link]
+```
+
+```{python}
+#compile all of this into a dataframe 
+enforcement_df = {
+  "Enforcement Action" : title, 
+  "Date" : date, 
+  "Category": category,
+  "Link": link
+}
+
+enforcement_df = pd.DataFrame(enforcement_df)
+
+print(enforcement_df.head())
+```
+
+### 2. Crawling (PARTNER 1)
+
+```{python}
+agencies= [] 
+for url in link:
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, "lxml")
+    agency = soup.find_all("ul", class_="usa-list usa-list--unstyled margin-y-2")
+    agency = [li.find_all("li")[1].get_text(strip=True) for li in agency if len(li.find_all("li")) > 1]
+    agency = [item.replace("Agency:", "").strip() for item in agency]
+    agencies.append(agency)
+```
+
+```{python}
+#add column to df 
+enforcement_df["Agency"] = agencies
+
+print(enforcement_df.head())
+```
+
+## Step 2: Making the scraper dynamic
+
+### 1. Turning the scraper into a function 
+
+* a. Pseudo-Code (PARTNER 2)
+
+
+* b. Create Dynamic Scraper (PARTNER 2)
+
+```{python}
+
+```
+
+* c. Test Partner's Code (PARTNER 1)
+
+```{python}
+
+```
+
+## Step 3: Plot data based on scraped data
+
+### 1. Plot the number of enforcement actions over time (PARTNER 2)
+
+```{python}
+
+```
+
+### 2. Plot the number of enforcement actions categorized: (PARTNER 1)
+
+* based on "Criminal and Civil Actions" vs. "State Enforcement Agencies"
+
+```{python}
+
+```
+
+* based on five topics
+
+```{python}
+
+```
+
+## Step 4: Create maps of enforcement activity
+
+### 1. Map by State (PARTNER 1)
+
+```{python}
+
+```
+
+
+### 2. Map by District (PARTNER 2)
+
+```{python}
+
+```
+
+## Extra Credit
+
+### 1. Merge zip code shapefile with population
+```{python}
+
+```
+
+### 2. Conduct spatial join
+```{python}
+
+```
+
+### 3. Map the action ratio in each district
+```{python}
+
+```
