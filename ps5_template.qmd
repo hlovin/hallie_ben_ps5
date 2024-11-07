@@ -129,6 +129,7 @@ print(enforcement_df.head())
 ### 2. Crawling (PARTNER 1)
 
 ```{python}
+#grab the agency name from the different enforcements 
 agencies= [] 
 for url in link:
     response = requests.get(url)
@@ -151,17 +152,126 @@ print(enforcement_df.head())
 ### 1. Turning the scraper into a function 
 
 * a. Pseudo-Code (PARTNER 2)
+psuedo code:
+
+1) initiate the function and have it take in month and year
+2) check that year >= 2013, if not return error message
+3) if year is good, move on
+4)initialize a while loop that will run infinitely, break will come inside when we reach end
+5) run scraper as seperate function
+6)as scraper running and collecting data, have it check date before appending each row
+7) Break when date of last entry > date input
+8) clean any dates that are too late
 
 
 * b. Create Dynamic Scraper (PARTNER 2)
 
 ```{python}
+#import datetime
+#import time
+def enforcement_year_month(year, month):
+  base_url = "https://oig.hhs.gov"
 
+  #test if the date given is <= 2013
+  test_date = datetime.date(year, month, 1)
+  if datetime.date(2013, 1, 1) > test_date:
+    return print("Please enter a date <= Jan 1 2013")
+
+  #since it is, continue by initializing scraper
+  else:
+    date = datetime.datetime.today().date()
+    dates = []
+    categories = []
+    links = []
+    titles = []
+
+    page = 1
+    while date >=  test_date:
+      url = f"https://oig.hhs.gov/fraud/enforcement/?page={page}"
+      response = requests.get(url)
+      soup = BeautifulSoup(response.text, "lxml")
+
+      title = soup.find_all("h2")
+      title = [item.find("a").get_text(strip=True) for item in soup.find_all("h2") if item.find("a", href=True)]
+      titles.extend(title)
+
+      date = [date.get_text(strip=True) for date in soup.find_all("span", class_="text-base-dark padding-right-105")]
+      dates.extend(date)
+
+      category = [category.get_text(strip=True) for category in soup.find_all("li", class_="display-inline-block usa-tag text-no-lowercase text-base-darkest bg-base-lightest margin-right-1")]
+
+      #removing categories that caused doubles and never appeared on their own
+      if page == 23:
+        category.pop(-3)
+      for c in category:
+          if c == "COVID-19" or c == 'EMTALA/Patient Dumping':
+            pass
+          else:
+            categories.append(c)
+      print(page, len(categories))
+
+      link = [item.find("a")["href"] for item in soup.find_all("h2") if item.find("a", href=True)]
+
+      link = [urljoin(base_url, link) for link in link]
+      links.extend(link)
+
+      df = {
+      "Enforcement Action" : titles, 
+      "Date" : dates, 
+      "Category": categories,
+      "Link": links
+      }
+      df = pd.DataFrame(df)
+
+
+      df["Date"] = pd.to_datetime(df["Date"])
+      date = df["Date"].iloc[-1].date()
+
+      #tracking page number to turn to next page in wabpage
+      page += 1
+      time.sleep(1)
+
+  df = df[df["Date"].dt.date >= test_date]
+  return df
+
+
+
+#test = enforcement_year_month(2024, 6)
+january = enforcement_year_month(2023, 1)
+print(len(january))
+print(january.iloc(-1))
+
+#chatGPT used for extend() method and error handling in date section
 ```
 
 * c. Test Partner's Code (PARTNER 1)
 
 ```{python}
+
+page = 23
+dates = []
+categories = []
+links = []
+titles = []
+url = "https://oig.hhs.gov/fraud/enforcement/?page=23"
+
+response = requests.get(url)
+soup = BeautifulSoup(response.text, "lxml")
+
+title = soup.find_all("h2")
+title = [item.find("a").get_text(strip=True) for item in soup.find_all("h2") if item.find("a", href=True)]
+titles.extend(title)
+
+date = [date.get_text(strip=True) for date in soup.find_all("span", class_="text-base-dark padding-right-105")]
+dates.extend(date)
+
+category = [category.get_text(strip=True) for category in soup.find_all("li", class_="display-inline-block usa-tag text-no-lowercase text-base-darkest bg-base-lightest margin-right-1")]
+
+print(type(category))
+if page == 23:
+  category.pop(-3)
+
+            
 
 ```
 
