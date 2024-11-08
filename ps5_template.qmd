@@ -279,11 +279,15 @@ print("Details of Earliest Entry:", jan2021.iloc[-1])
 ```{python}
 #Extract the year from the date column 
 jan2021["Year"] = jan2021["Date"].dt.year
+jan2021["Month"] = jan2021["Date"].dt.month
+
+# Combine month and year into one column
+jan2021["Date"] = jan2021["Date"].dt.strftime("%Y-%m")
 ```
 
 ```{python}
 #Group the data based on year and count the category in each year 
-categorygroup = jan2021.groupby(["Year", "Category"]).size().reset_index(name='count')
+categorygroup = jan2021.groupby(["Date", "Category"]).size().reset_index(name='count')
 ```
 
 ```{python}
@@ -294,7 +298,7 @@ plot2_group = categorygroup[(categorygroup["Category"] == "Criminal and Civil Ac
 ```{python}
 #plot the data 
 alt.Chart(plot2_group).mark_line().encode(
-  x= "Year:O",
+  x= "Date:T",
   y= "count:Q",
   color= "Category:N"
 )
@@ -328,13 +332,13 @@ criminal_civil["Topic"] = criminal_civil["Enforcement Action"].apply(
 
 ```{python}
 #count number of each enforcement action based on category
-topic_group = criminal_civil.groupby(["Year", "Topic"]).size().reset_index(name="count")
+topic_group = criminal_civil.groupby(["Date", "Topic"]).size().reset_index(name="count")
 ```
 
 ```{python}
 #plot the five topics 
 alt.Chart(topic_group).mark_line().encode(
-  x="Year:O", 
+  x="Date:T", 
   y= "count:Q",
   color = "Topic:N"
 )
@@ -359,6 +363,12 @@ shp = gpd.read_file(shp_path)
 ```{python}
 #make a state column
 jan2021["State"] = jan2021["Agency"].str.extract(r"(?:State of|District of) ([A-Za-z]+(?:\s[A-Za-z]+)?)")
+```
+
+```{python}
+#replace any agency that has the enforcement type instead of the agency with NA. This happens when there is no agency indicated bc the website puts enforcement type in that section of the webpage 
+import numpy as np
+jan2021["Agency"] = jan2021["Agency"].where(~jan2021["Agency"].str.startswith('Enforcement Types:'), np.nan)
 ```
 
 ```{python}
