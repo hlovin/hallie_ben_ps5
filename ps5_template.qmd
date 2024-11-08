@@ -357,9 +357,32 @@ shp = gpd.read_file(shp_path)
 ```
 
 ```{python}
-
+#make a state column
+jan2021["State"] = jan2021["Agency"].str.extract(r"(?:State of|District of) ([A-Za-z]+(?:\s[A-Za-z]+)?)")
 ```
 
+```{python}
+#group by state and find the number of enforcements per state
+state_group = jan2021.groupby("State").size().reset_index(name = "count")
+```
+
+```{python}
+#join the shape file with the state group by Name and State
+state_group = shp.merge(state_group, left_on="NAME", right_on="State")
+```
+
+```{python}
+import matplotlib.pyplot as plt
+```
+
+```{python}
+#plot the shapefile 
+state_group.plot(column = "count", legend = True)
+plt.axis("off")
+plt.xlim([-180, -65]) 
+plt.ylim([24, 72]) 
+plt.title("Number of Enforcement Actions by State")
+```
 
 ### 2. Map by District (PARTNER 2)
 
