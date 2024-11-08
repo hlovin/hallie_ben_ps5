@@ -270,14 +270,40 @@ print("Details of Earliest Entry:", jan2021.iloc[-1])
 ## Step 3: Plot data based on scraped data
 
 ### 1. Plot the number of enforcement actions over time (PARTNER 2)
+```{python}
+import os
+path = r"/Users/benschiffman/Desktop/Python 2/hallie_ben_ps5/"
+relative_path = r"enforcement_actions_2021_1.csv"
+jan2021 = pd.read_csv(os.path.join(path, relative_path))
+jan2021["Date"] = pd.to_datetime(jan2021["Date"])
+#Extract the year from the date column 
 
+jan2021["Year"] = jan2021["Date"].dt.year
+jan2021["Month"] = jan2021["Date"].dt.month
+
+# Combine month and year into one column
+jan2021["Date"] = jan2021["Date"].dt.strftime("%Y-%m")
+```
+
+```{python}
+#graphing enforcement actions over time
+alt.Chart(jan2021).mark_line().encode(
+  alt.X("yearmonth(Date):T"),
+  alt.Y("count(Enforcement Action):Q")
+).properties(
+  title = "Enforcement Actions Over Time"
+)
+```
 
 ### 2. Plot the number of enforcement actions categorized: (PARTNER 1)
 
 * based on "Criminal and Civil Actions" vs. "State Enforcement Agencies"
 
 ```{python}
+jan2021 = pd.read_csv(os.path.join(path, relative_path))
+jan2021["Date"] = pd.to_datetime(jan2021["Date"])
 #Extract the year from the date column 
+
 jan2021["Year"] = jan2021["Date"].dt.year
 jan2021["Month"] = jan2021["Date"].dt.month
 
@@ -397,9 +423,56 @@ plt.title("Number of Enforcement Actions by State")
 ### 2. Map by District (PARTNER 2)
 
 ```{python}
+#load in data
+ben_path_USatr = r"/Users/benschiffman/Desktop/Python 2/hallie_ben_ps5/US Attorney Districts Shapefile simplified_20241108"
 
+us_atr_shp = gpd.read_file(ben_path_USatr)
+
+#make new df
+district_df = jan2021.copy()
+
+#clean to match
+district_df["Agency"] = district_df["Agency"].apply(lambda x: x.replace("U.S. Attorney's Office, ", ""))
+district_df["Agency"][0] = district_df["Agency"][0].replace("November 7, 2024; ", "")
+
+#merge
+district_shp = district_df.merge(
+  us_atr_shp,
+  how = "inner",
+  left_on = "Agency",
+  right_on = "judicial_d"
+)
+
+#remove repeated column and rename
+district_shp = district_shp.drop(columns = "judicial_d") 
+  #I used chatGPT to find this method
+district_shp = district_shp.rename(columns = {"Agency" : "District"})
 ```
 
+```{python}
+#make chloropleth
+#Make a counts col
+district_counts = district_shp.groupby("District").size().reset_index()
+district_counts.columns = ["District", "count"]
+
+#merge counts in
+district_shp = district_shp.merge(
+  district_counts,
+  how = "inner",
+  on = "District"
+)
+
+district_shp.head()
+
+district_shp = gpd.GeoDataFrame(district_shp, geometry="geometry")
+type(district_shp)
+
+district_shp.plot(column = "count", legend = True)
+plt.axis("off")
+plt.xlim([-180, -65]) 
+plt.ylim([24, 72]) 
+plt.title("Number of Enforcement Actions by US Attorney District")
+```
 ## Extra Credit
 
 ### 1. Merge zip code shapefile with population
