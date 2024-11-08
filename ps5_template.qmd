@@ -264,18 +264,84 @@ print("Details of Earliest Entry:", jan2021.iloc[-1])
 * based on "Criminal and Civil Actions" vs. "State Enforcement Agencies"
 
 ```{python}
+#Extract the year from the date column 
+jan2021["Year"] = jan2021["Date"].dt.year
+```
 
+```{python}
+#Group the data based on year and count the category in each year 
+categorygroup = jan2021.groupby(["Year", "Category"]).size().reset_index(name='count')
+```
+
+```{python}
+#pull out only Criminal and Civil Actions and State Enforcement Agencies
+plot2_group = categorygroup[(categorygroup["Category"] == "Criminal and Civil Actions") | (categorygroup["Category"] == "State Enforcement Agencies")]
+```
+
+```{python}
+#plot the data 
+alt.Chart(plot2_group).mark_line().encode(
+  x= "Year:O",
+  y= "count:Q",
+  color= "Category:N"
+)
 ```
 
 * based on five topics
 
 ```{python}
+#only pull out the criminal and civil actions
+criminal_civil = jan2021[jan2021["Category"] == "Criminal and Civil Actions"]
+```
 
+```{python}
+#Make keywords to determine if something is a certain kind of fraud
+health_keywords = ["health care fraud", "health fraud", "medicare fraud", "medicaid", "medicare", "nurse", "doctor", "hospital", "healthcare"]
+financial_keywords = ["financial fraud", "bank fraud", "money laundering", "defraud"]
+drug_keywords = ["drug enforcement", "narcotics", "drug", "opiod", "pharmacy"]
+bribery_keywords = ["bribery", "corruption"]
+```
+
+```{python}
+#make a new column 
+criminal_civil["Topic"] = criminal_civil["Enforcement Action"].apply(
+    lambda x: "Health Care Fraud" if any(keyword in x.lower() for keyword in health_keywords)
+              else "Financial Fraud" if any(keyword in x.lower() for keyword in financial_keywords)
+              else "Drug Enforcement" if any(keyword in x.lower() for keyword in drug_keywords)
+              else "Bribery/Corruption" if any(keyword in x.lower() for keyword in bribery_keywords)
+              else "Other"
+)
+```
+
+```{python}
+#count number of each enforcement action based on category
+topic_group = criminal_civil.groupby(["Year", "Topic"]).size().reset_index(name="count")
+```
+
+```{python}
+#plot the five topics 
+alt.Chart(topic_group).mark_line().encode(
+  x="Year:O", 
+  y= "count:Q",
+  color = "Topic:N"
+)
 ```
 
 ## Step 4: Create maps of enforcement activity
 
 ### 1. Map by State (PARTNER 1)
+
+```{python}
+#load in necessary packages 
+import geopandas as gpd
+```
+
+```{python}
+#load in shapefile 
+shp_path = f"/Users/hallielovin/Documents/GitHub/hallie_ben_ps5/cb_2018_us_state_500k"
+
+shp = gpd.read_file(shp_path)
+```
 
 ```{python}
 
