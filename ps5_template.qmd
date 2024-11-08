@@ -177,16 +177,20 @@ def enforcement_year_month(year, month):
   if datetime.date(2013, 1, 1) > test_date:
     return print("Please enter a date <= Jan 1 2013")
 
-  #since it is, continue by initializing scraper
+  #since it is, continue by initializing scraper loop
   else:
     date = datetime.datetime.today().date()
     dates = []
     categories = []
     links = []
     titles = []
-
     page = 1
+
+    #while loop runs while the lat entry in the df still more recent or equal to test date
+    #the page counter is used to complete the link and properly collect data in sequence
     while date >=  test_date:
+
+      #scraper runs by catching all entries of each relevant category on each page of the website and compiling them into a central df
       url = f"https://oig.hhs.gov/fraud/enforcement/?page={page}"
       response = requests.get(url)
       soup = BeautifulSoup(response.text, "lxml")
@@ -232,12 +236,13 @@ def enforcement_year_month(year, month):
   df = df[df["Date"].dt.date >= test_date]
   return df
 
+```
 
-
-#test = enforcement_year_month(2024, 6)
+```{python}
 january = enforcement_year_month(2023, 1)
 print("Number of enforcement actions:", len(january))
 print("Details of earliest entry:\n",  january.iloc[-1])
+```
 
 #chatGPT used for extend() method and error handling in date section
 ```
@@ -245,31 +250,6 @@ print("Details of earliest entry:\n",  january.iloc[-1])
 * c. Test Partner's Code (PARTNER 1)
 
 ```{python}
-
-page = 23
-dates = []
-categories = []
-links = []
-titles = []
-url = "https://oig.hhs.gov/fraud/enforcement/?page=23"
-
-response = requests.get(url)
-soup = BeautifulSoup(response.text, "lxml")
-
-title = soup.find_all("h2")
-title = [item.find("a").get_text(strip=True) for item in soup.find_all("h2") if item.find("a", href=True)]
-titles.extend(title)
-
-date = [date.get_text(strip=True) for date in soup.find_all("span", class_="text-base-dark padding-right-105")]
-dates.extend(date)
-
-category = [category.get_text(strip=True) for category in soup.find_all("li", class_="display-inline-block usa-tag text-no-lowercase text-base-darkest bg-base-lightest margin-right-1")]
-
-print(type(category))
-if page == 23:
-  category.pop(-3)
-
-            
 
 ```
 
