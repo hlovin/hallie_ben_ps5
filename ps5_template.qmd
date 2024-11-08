@@ -227,7 +227,7 @@ def enforcement_year_month(year, month):
         agency = soup.find_all("ul", class_="usa-list usa-list--unstyled margin-y-2")
         agency = [li.find_all("li")[1].get_text(strip=True) for li in agency if len(li.find_all("li")) > 1]
         agency = [item.replace("Agency:", "").strip() for item in agency]
-        agencies.append(agency)
+        agencies.extend(agency)
 
       df = {
       "Agency": agencies,
