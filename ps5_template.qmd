@@ -167,8 +167,8 @@ psuedo code:
 * b. Create Dynamic Scraper (PARTNER 2)
 
 ```{python}
-#import datetime
-#import time
+import datetime
+import time
 def enforcement_year_month(year, month):
   base_url = "https://oig.hhs.gov"
 
@@ -245,21 +245,19 @@ print("Details of earliest entry:\n",  january.iloc[-1])
 ```
 
 #chatGPT used for extend() method and error handling in date section
-```
 
-* c. Test Partner's Code (PARTNER 1)
+c. Test Partner's Code (PARTNER 1)
 
 ```{python}
-
+jan2021 = enforcement_year_month(2021,1)
+print("Number of Enforcement Actions:", len(jan2021))
+print("Details of Earliest Entry:", jan2021.iloc[-1])
 ```
 
 ## Step 3: Plot data based on scraped data
 
 ### 1. Plot the number of enforcement actions over time (PARTNER 2)
 
-```{python}
-
-```
 
 ### 2. Plot the number of enforcement actions categorized: (PARTNER 1)
 
