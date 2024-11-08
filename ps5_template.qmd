@@ -169,6 +169,9 @@ psuedo code:
 ```{python}
 import datetime
 import time
+```
+
+```{python}
 def enforcement_year_month(year, month):
   base_url = "https://oig.hhs.gov"
 
@@ -184,6 +187,7 @@ def enforcement_year_month(year, month):
     categories = []
     links = []
     titles = []
+    agencies= [] 
     page = 1
 
     #while loop runs while the lat entry in the df still more recent or equal to test date
@@ -198,7 +202,7 @@ def enforcement_year_month(year, month):
       title = soup.find_all("h2")
       title = [item.find("a").get_text(strip=True) for item in soup.find_all("h2") if item.find("a", href=True)]
       titles.extend(title)
-
+    
       div = soup.find_all('div', class_ = "font-body-sm margin-top-1")
 
       """
@@ -216,8 +220,17 @@ def enforcement_year_month(year, month):
 
       link = [urljoin(base_url, link) for link in link]
       links.extend(link)
+      
+      for url in link:
+        response = requests.get(url)
+        soup = BeautifulSoup(response.text, "lxml")
+        agency = soup.find_all("ul", class_="usa-list usa-list--unstyled margin-y-2")
+        agency = [li.find_all("li")[1].get_text(strip=True) for li in agency if len(li.find_all("li")) > 1]
+        agency = [item.replace("Agency:", "").strip() for item in agency]
+        agencies.append(agency)
 
       df = {
+      "Agency": agencies,
       "Enforcement Action" : titles, 
       "Date" : dates, 
       "Category": categories,
@@ -235,7 +248,6 @@ def enforcement_year_month(year, month):
 
   df = df[df["Date"].dt.date >= test_date]
   return df
-
 ```
 
 ```{python}
