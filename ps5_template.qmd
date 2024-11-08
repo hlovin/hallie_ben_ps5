@@ -195,21 +195,19 @@ def enforcement_year_month(year, month):
       title = [item.find("a").get_text(strip=True) for item in soup.find_all("h2") if item.find("a", href=True)]
       titles.extend(title)
 
-      date = [date.get_text(strip=True) for date in soup.find_all("span", class_="text-base-dark padding-right-105")]
-      dates.extend(date)
+      div = soup.find_all('div', class_ = "font-body-sm margin-top-1")
 
-      category = [category.get_text(strip=True) for category in soup.find_all("li", class_="display-inline-block usa-tag text-no-lowercase text-base-darkest bg-base-lightest margin-right-1")]
+      """
+      in order to keep our crawler code and still handle the doubled categories, I found how the row that reports the date and category for each enforcement action. The loop below that just parses and adds those two to their respective arrays to later be added to the df
+      """
+      for div in div:     
+        date = [date.get_text(strip=True) for date in div.find_all("span", class_="text-base-dark padding-right-105")]
+        dates.extend(date)
 
-      #removing categories that caused doubles and never appeared on their own
-      if page == 23:
-        category.pop(-3)
-      for c in category:
-          if c == "COVID-19" or c == 'EMTALA/Patient Dumping':
-            pass
-          else:
-            categories.append(c)
-      print(page, len(categories))
-
+        category = [category.get_text(strip=True) for category in div.find_all("li", class_="display-inline-block usa-tag text-no-lowercase text-base-darkest bg-base-lightest margin-right-1")]
+        cat = ",".join(category) #joins if there are more than 1 per enforcment action. 
+        categories.append(cat)
+    
       link = [item.find("a")["href"] for item in soup.find_all("h2") if item.find("a", href=True)]
 
       link = [urljoin(base_url, link) for link in link]
@@ -238,8 +236,8 @@ def enforcement_year_month(year, month):
 
 #test = enforcement_year_month(2024, 6)
 january = enforcement_year_month(2023, 1)
-print(len(january))
-print(january.iloc(-1))
+print("Number of enforcement actions:", len(january))
+print("Details of earliest entry:\n",  january.iloc[-1])
 
 #chatGPT used for extend() method and error handling in date section
 ```
