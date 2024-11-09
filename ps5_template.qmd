@@ -5,20 +5,20 @@ date: "11/9/2024"
 format: 
   pdf:
     include-in-header: 
-       text: |
-         \usepackage{fvextra}
-         \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\}}
-include-before-body:
-  text: |
-    \RecustomVerbatimEnvironment{verbatim}{Verbatim}{
-      showspaces = false,
-      showtabs = false,
-      breaksymbolleft={},
-      breaklines
-    }
-output:
+      text: |
+        \usepackage{fvextra}
+        \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\}}
+    include-before-body:
+      text: |
+        \RecustomVerbatimEnvironment{verbatim}{Verbatim}{
+          showspaces = false,
+          showtabs = false,
+          breaksymbolleft={},
+          breaklines
+        }
+execute:
   echo: false
-  eval: false
+  eval: true
 ---
 
 **Due 11/9 at 5:00PM Central. Worth 100 points + 10 points extra credit.**
@@ -44,6 +44,7 @@ output:
 import pandas as pd
 import altair as alt
 import time
+import os
 
 import warnings 
 warnings.filterwarnings('ignore')
@@ -196,7 +197,7 @@ def enforcement_year_month(year, month):
 
       #scraper runs by catching all entries of each relevant category on each page of the website and compiling them into a central df
       url = f"https://oig.hhs.gov/fraud/enforcement/?page={page}"
-      response = requests.get(url)
+      response = requests.get(url, timeout=60)
       soup = BeautifulSoup(response.text, "lxml")
 
       title = soup.find_all("h2")
@@ -221,13 +222,14 @@ def enforcement_year_month(year, month):
       link = [urljoin(base_url, link) for link in link]
       links.extend(link)
       
-      for url in link:
-        response = requests.get(url)
+      for u in link:
+        response = requests.get(u)
         soup = BeautifulSoup(response.text, "lxml")
         agency = soup.find_all("ul", class_="usa-list usa-list--unstyled margin-y-2")
         agency = [li.find_all("li")[1].get_text(strip=True) for li in agency if len(li.find_all("li")) > 1]
         agency = [item.replace("Agency:", "").strip() for item in agency]
         agencies.extend(agency)
+      print(len(agencies))
 
       df = {
       "Agency": agencies,
@@ -237,6 +239,7 @@ def enforcement_year_month(year, month):
       "Link": links
       }
       df = pd.DataFrame(df)
+      
 
 
       df["Date"] = pd.to_datetime(df["Date"])
@@ -252,7 +255,10 @@ def enforcement_year_month(year, month):
 ```
 
 ```{python}
-january = enforcement_year_month(2023, 1)
+#january = enforcement_year_month(2023, 1)
+ben_path = r"/Users/benschiffman/Desktop/Python 2/hallie_ben_ps5/"
+ben_jan_path = r"enforcement_actions_2023_1.csv"
+january = pd.read_csv(os.path.join(ben_path, ben_jan_path))
 print("Number of enforcement actions:", len(january))
 print("Details of earliest entry:\n",  january.iloc[-1])
 ```
@@ -262,7 +268,10 @@ print("Details of earliest entry:\n",  january.iloc[-1])
 c. Test Partner's Code (PARTNER 1)
 
 ```{python}
-jan2021 = enforcement_year_month(2021,1)
+#jan2021 = enforcement_year_month(2021,1)
+
+ben_jan_path = r"enforcement_actions_2021_1.csv"
+jan2021 = pd.read_csv(os.path.join(ben_path, ben_jan_path))
 print("Number of Enforcement Actions:", len(jan2021))
 print("Details of Earliest Entry:", jan2021.iloc[-1])
 ```
@@ -271,6 +280,7 @@ print("Details of Earliest Entry:", jan2021.iloc[-1])
 
 ### 1. Plot the number of enforcement actions over time (PARTNER 2)
 ```{python}
+jan2021["Date"] = pd.to_datetime(jan2021["Date"])
 #Extract the year from the date column 
 jan2021["Year"] = jan2021["Date"].dt.year
 jan2021["Month"] = jan2021["Date"].dt.month
@@ -294,7 +304,6 @@ alt.Chart(jan2021).mark_line().encode(
 * based on "Criminal and Civil Actions" vs. "State Enforcement Agencies"
 
 ```{python}
-jan2021 = pd.read_csv(os.path.join(path, relative_path))
 jan2021["Date"] = pd.to_datetime(jan2021["Date"])
 #Extract the year from the date column 
 
@@ -377,7 +386,9 @@ import geopandas as gpd
 #load in shapefile 
 shp_path = f"/Users/hallielovin/Documents/GitHub/hallie_ben_ps5/cb_2018_us_state_500k"
 
-shp = gpd.read_file(shp_path)
+ben_census_path = r"/Users/benschiffman/Desktop/Python 2/hallie_ben_ps5/cb_2018_us_state_500k"
+
+shp = gpd.read_file(ben_census_path)
 ```
 
 ```{python}
@@ -424,7 +435,7 @@ us_atr_shp = gpd.read_file(ben_path_USatr)
 
 #make new df
 district_df = jan2021.copy()
-
+district_df["Agency"] = district_df["Agency"].astype(str)
 #clean to match
 district_df["Agency"] = district_df["Agency"].apply(lambda x: x.replace("U.S. Attorney's Office, ", ""))
 district_df["Agency"][0] = district_df["Agency"][0].replace("November 7, 2024; ", "")
